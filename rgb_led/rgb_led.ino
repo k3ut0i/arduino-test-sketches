@@ -1,60 +1,53 @@
-int red_pin2 = 2;
-int green_pin2 = 3;
-int blue_pin2 = 4;
+struct led{
+  int pinno;
+  boolean active;
+  boolean active_on_high;
+}red1, green1, blue1, red2, green2, blue2;
 
-boolean red2 = false;
-boolean green2 = false;
-boolean blue2 = false;
+static struct led
+leds[] = {
+    {5, false, false}, //red1
+	  {6, false, false}, //green1
+	  {7, false, false}, //blue1,
+	  {8, false, false}, //red2,
+	  {9, false, false}, //green2,
+	  {10, false, false}, //blue2
+};
 
-int red_pin1 = 8;
-int green_pin1 = 9;
-int blue_pin1 = 10;
+static const unsigned long change_period = 1000; //millisecs
 
-boolean red1 = false;
-boolean green1 = false;
-boolean blue1 = false;
+static void update_led(struct led * l){
+  boolean led_on = (l->active && l->active_on_high) ||
+    !(l->active || l->active_on_high);
+  if(led_on)
+    digitalWrite(l->pinno, l->active_on_high ? HIGH : LOW);
+  else
+    digitalWrite(l->pinno, l->active_on_high ? LOW : HIGH);
+}
 
-
-unsigned int red_brightness = 0;
-unsigned int green_brightness = 0;
-unsigned int blue_brightness = 0;
-
-unsigned long change_period = 1000; //millisecs
-
-void update_led(){
-    digitalWrite(red_pin1, red1 ?LOW:HIGH);
-    digitalWrite(green_pin1, green1 ?LOW:HIGH);
-    digitalWrite(blue_pin1, blue1 ?LOW:HIGH);
-
-    digitalWrite(red_pin2, red2?LOW:HIGH);
-    digitalWrite(green_pin2, green2?LOW:HIGH);
-    digitalWrite(blue_pin2, blue2?LOW:HIGH);
-  }
+static void update_leds(){
+  for(unsigned int i = 0; i < sizeof(leds)/sizeof(leds[0]); i++)
+    update_led(&leds[i]);
+}
 
 void setup() {
   // put your setup code here, to run once:
-  pinMode(red_pin1, OUTPUT);
-  pinMode(green_pin1, OUTPUT);
-  pinMode(blue_pin1, OUTPUT);
-
-  pinMode(red_pin2, OUTPUT);
-  pinMode(green_pin2, OUTPUT);
-  pinMode(blue_pin2, OUTPUT);
   
-  pinMode(LED_BUILTIN, OUTPUT);
-  
+  pinMode(LED_BUILTIN, OUTPUT);  
   digitalWrite(LED_BUILTIN, LOW);
-  update_led();
+  for(unsigned int i = 0; i < sizeof(leds)/sizeof(leds[0]); i++)
+    pinMode(leds[i].pinno, OUTPUT);
+  update_leds();
 }
 
 void loop() {
-
   //Fade from one color to the next.
-  for(int i = 0; i < 8; i++){
-    red1 = (i & 1<<0) == 0 ? true : false;
-    green1 = (i & 1<<1) == 0 ? true : false;
-    blue1 = (i & 1<<2) == 0 ? true :false;
+  const unsigned int num_leds = sizeof(leds)/sizeof(leds[0]);
+  const unsigned int num_states = 2 << (num_leds - 1);
+  for(unsigned int i = 0; i < num_states; i++){
+    for(unsigned int j = 0; j < num_leds; j++)
+      leds[j].active = ((1 << j) & i) == 0;
     delay(change_period);
-    update_led();
+    update_leds();
     }
 }
